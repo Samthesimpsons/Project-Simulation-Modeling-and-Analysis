@@ -28,9 +28,9 @@ This project's objective is to enable insights such as how the Land Transport Au
     ├───06 Model Documentation and Programming
     ├───07 User Interface Visualization and Animation
     └───08 Output Analysis
-        └───Log files, CSV files
+        └───CSV files
 ```
 
-1. **Final Presentation and Video:** Contain the final presentation and a explanation video
+1. **Final Presentation and Video:** Contain the final presentation and an explanation video
 2. **JaamSim Simulation:** Contain our simulations with JaamSim installed locally
-3. **Project Deliverables:** Contains our entire workflow
+3. **Project Deliverables:** Contains our entire workflow, note the logger output from our simulation have been removed due to file size limit.
