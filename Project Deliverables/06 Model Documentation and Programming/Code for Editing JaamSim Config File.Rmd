@@ -1,0 +1,549 @@
+---
+title: "Code for Editing JaamSim Config File"
+author: "Samuel Sim, Lee Min Shuen"
+date: "November 2021"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+Note for some the following code the indexing or the text might differ from the final model cfg files, as they have been corrected at later stages.
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 10:69){
+  #self remove 35
+  x <- (paste0(x,"EnterTrain_",i," NextComponent { Station_BoardTrain",i," }
+      EnterTrain_",i," WaitQueue { Station_PassengerQueue",i," }
+      EnterTrain_",i," NumberOfEntities { min([Station_PassengerQueue",i,"].QueueLength,600) }
+      EnterTrain_",i," ContainerQueue { Station_TrainQueue",i," }nn      "
+      ))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+j = 67
+for (i in 2:33){
+  x <- (paste0(x,"Branch",i," NextComponentList { Station_PassengerQueue",i,"  Station_PassengerQueue",j," }
+               Branch",i," Choice { 'this.NumberProcessed % 2 + 1' }nn      "
+      ))
+  j = j- 1
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 37:70){
+  x <- (paste0(x,"TrackSegment",i," NextComponent { Station_ExitTrainQueue",i," }
+               TrackSegment",i," TravelTime { 5  min }nn      "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 1:34){
+  x <- (paste0(x,"TrackSegment",i," NextComponent { Station_ExitTrainQueue",i+1," }
+               TrackSegment",i," TravelTime { 5  min }nn      "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 2:33){
+  x <- (paste0(x,"PassengerArrival",i," NextComponent { Branch",i," }
+  PassengerArrival",i," InterArrivalTime { NonStatExponentialDistWeekday }
+  PassengerArrival",i," EntitiesPerArrival { 1 }
+  PassengerArrival",i," PrototypeEntity { Passenger }zz      "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 2:70){
+  if (i != 36){
+    x <- (paste0(x,"Station_ExitTrain",i," NextComponent { StationExit",i," }
+  Station_ExitTrain",i," WaitQueue { Station_ExitTrainQueue",i," }
+  Station_ExitTrain",i," ServiceTime { 0.1  min }
+  Station_ExitTrain",i," NumberOfEntities { 0.4*this.Container.Count }
+  Station_ExitTrain",i," NextForContainers { Station_TrainQueue",i," }nn  "))
+  }
+  
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 1:34){
+    x <- (paste0(x,"Station",i," NextComponent { TrackSegment",i," } 
+    Station",i," WaitQueue { Station_BoardTrain",i," }
+    Station",i," ServiceTime { 2  min }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 36:69){
+    x <- (paste0(x,"Station",i," NextComponent { TrackSegment",i+1," }
+    Station",i," WaitQueue { Station_BoardTrain",i," }
+    Station",i," ServiceTime { 2  min }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 1:34){
+    x <- (paste0(x,"EnterTrain_",i," Position { ",-4.5+(i-1)*7,"  ",-1.5,"  ",0.0,"  m }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+j = 1
+for (i in 36:70){
+    x <- (paste0(x,"EnterTrain_",i," Position { ",233.5-(j-1)*7,"  ",-7.5,"  ",0.0,"  m }nn  "))
+    j <- j + 1
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 2:34){
+    x <- (paste0(x,"Branch",i," Position { ",4.5+(i-2)*7,"  -4.5  0.0  m }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 0:35){
+    x <- (paste0(x,"TrackSegment",i," Points { { ",-9.8+i*7,"  -0.5  0.0  m } { ",-6.2+i*7,"  -0.5  0.0  m } }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+j = 0
+for (i in 36:71){
+    x <- (paste0(x,"TrackSegment",i," Points { { ",238.8-j*7,"  -8.5  0.0  m } { ",235.2-j*7,"  -8.5  0.0  m } }nn  "))
+    j <- j + 1
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 1:35){
+    x <- (paste0(x,"PassengerArrival",i," Position { ",-4.5+(i-1)*7,"  -4.5  0.0  m }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 2:35){
+    x <- (paste0(x,"StationExit",i," Position { ",2.5+(i-2)*7,"  2.5  0.0  m }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+j = 0
+for (i in 37:70){
+    x <- (paste0(x,"StationExit",i," Position { ",226.5-j*7,"  -12.0  0.0  m }nn  "))
+    j = j+1
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+j = 0
+for (i in 2:34){
+    x <- (paste0(x,"Station_BoardTrain",i," Position { ",2.5+j*7,"  -0.5  0.0  m }
+    
+    Station_ExitTrainQueue",i," Position { ",0.5+j*7,"  0.5  0.0  m }
+    
+    Station_PassengerQueue",i," Position { ",2.5+j*7,"  -2.5  0.0  m }
+    Station_PassengerQueue",i," MaxPerLine { 1 }
+    Station_PassengerQueue",i," MaxRows { 1 }
+    
+    Station_TrainQueue",i," Position { ",0.5+j*7,"  -1.5  0.0  m }nn  "))
+    j = j+1
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+j = 0
+for (i in 37:69){
+    x <- (paste0(x,"Station_BoardTrain",i," Position { ",226.5-j*7,"  -8.5  0.0  m }
+    
+    Station_ExitTrainQueue",i," Position { ",228.5-j*7,"  -10.5  0.0  m }
+    
+    Station_PassengerQueue",i," Position { ",226.5-j*7,"  -6.5  0.0  m }
+    Station_PassengerQueue",i," MaxPerLine { 1 }
+    Station_PassengerQueue",i," MaxRows { 1 }
+    
+    Station_TrainQueue",i," Position { ",228.5-j*7,"  -7.5  0.0  m }nn  "))
+    j = j+1
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 1:35){
+    x <- (paste0(x,"Station",i," Position { ",-4.5+(i-1)*7,"  0.5  0.0  m }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+j = 0
+for (i in 36:70){
+    x <- (paste0(x,"Station",i," Position { ",233.5-(j)*7,"  -9.5  0.0  m }nn  "))
+    j = j+1
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 1:35){
+    x <- (paste0(x,"Shape",i," Position { ",-4.5+(i-1)*7,"  -0.65  0.0  m }
+    Shape",i," Size { 3.0  5.3  1.0  m }
+    Shape",i," Filled { FALSE }
+    Shape",i," Outlined { TRUE }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+j = 0
+for (i in 36:70){
+    x <- (paste0(x,"Shape",i," Position { ",233.5-j*7,"  -8.72056  0.0  m }
+    Shape",i," Size { 3.0  5.3  1.0  m }
+    Shape",i," Filled { FALSE }
+    Shape",i," Outlined { TRUE }nn  "))
+    j = j + 1
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 2:35){
+    x <- (paste0(x,"Station_ExitTrain",i," Position { ",2.5+(i-2)*7,"  1.5  0.0  m }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+j = 0
+for (i in 37:70){
+    x <- (paste0(x,"Station_ExitTrain",i," Position { ",226.5-(j)*7,"  -10.5  0.0  m }nn  "))
+    j = j + 1
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 0:71){
+    x <- (paste0(x,"TrackSegment",i,"_Label Position { 0.0  -0.2  0.0  m }
+    TrackSegment",i,"_Label Size { 1.761503  0.3  1.0  m }
+    TrackSegment",i,"_Label RelativeEntity { TrackSegment",i," }
+    TrackSegment",i,"_Label Show { FALSE }
+    TrackSegment",i,"_Label TargetEntity { TrackSegment",i," }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 2:34){
+    x <- (paste0(x,"Branch",i,"_Label Position { 0.0  -0.65  0.0  m }
+    Branch",i,"_Label Size { 0.994648  0.3  1.0  m }
+    Branch",i,"_Label RelativeEntity { Branch",i," }
+    Branch",i,"_Label Show { FALSE }
+    Branch",i,"_Label FontColour { Black }
+    Branch",i,"_Label TargetEntity { Branch",i," }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+y <- c("Bukit Panjang",
+"Cashew",
+"Hillview",
+"Beauty World",
+"King Albert Park",
+"Sixth Avenue",
+"Tan Kah Kee",
+"Botanic Gardens",
+"Stevens",
+"Newton",
+"Little India",
+"Rochor",
+"Bugis",
+"Promenade",
+"Bayfront",
+"Downtown",
+"Telok Ayer",
+"Chinatown",
+"Fort Canning",
+"Bencoolen",
+"Jalan Besar",
+"Bendemeer",
+"Geylang Bahru",
+"Mattar",
+"MacPherson",
+"Ubi",
+"Kaki Bukit",
+"Bedok North",
+"Bedok Reservoir",
+"Tampines West",
+"Tampines",
+"Tampines East",
+"Upper Changi",
+"Expo")
+
+for (i in 1:34){
+    x <- (paste0(x,"Text",i," Position { ",-4.5+(i-1)*7,"  -5.7  0.0  m }
+    Text",i," Size { 1.8  0.8  1.0  m }
+    Text",i," TextHeight { 0.4  m }
+    Text",i," FontStyle { BOLD }
+    Text",i," Format { '",y[i],"' }nn  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+
+for (i in 1:68){
+    x <- (paste0(x,"Station_PassengerQueue",i," MaxValidLength { 2147483647 }zz  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+
+for (i in 42:75){
+    x <- (paste0(x,"Text",i," Position { -20.5  ",2.7-(i-42),"  0.0  m }
+    Text",i," Size { 1.6  0.6  1.0  m }
+    Text",i," Format { %1f }
+    Text",i," Unit { min }
+    Text",i," DataSource { [Station_PassengerQueue",i-41,"].AverageQueueTime }zz  "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+j = 67
+for (i in 76:108){
+    x <- (paste0(x,"Text",i," Position { -16.5  ",1.7-(i-76),"  0.0  m }
+    Text",i," Size { 1.6  0.6  1.0  m }
+    Text",i," Format { %1f }
+    Text",i," Unit { min }
+    Text",i," DataSource { [Station_PassengerQueue",j,"].AverageQueueTime }zz  "))
+    j = j -1
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 42:107){
+    x <- (paste0(x,"Text",i," UnitType { TimeUnit }zz "))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+y <- c("Bukit Panjang",
+"Cashew",
+"Hillview",
+"Beauty World",
+"King Albert Park",
+"Sixth Avenue",
+"Tan Kah Kee",
+"Botanic Gardens",
+"Stevens",
+"Newton",
+"Little India",
+"Rochor",
+"Bugis",
+"Promenade",
+"Bayfront",
+"Downtown",
+"Telok Ayer",
+"Chinatown",
+"Fort Canning",
+"Bencoolen",
+"Jalan Besar",
+"Bendemeer",
+"Geylang Bahru",
+"Mattar",
+"MacPherson",
+"Ubi",
+"Kaki Bukit",
+"Bedok North",
+"Bedok Reservoir",
+"Tampines West",
+"Tampines",
+"Tampines East",
+"Upper Changi",
+"Expo")
+
+j = 1
+for (i in 108:141){
+    x <- (paste0(x,"Text",i," Position { -22.0  ",2.7-(i-108),"  0.0  m }
+    Text",i," Alignment { 0.5  0.0  0.0 }
+    Text",i," Size { 3.1  0.6  1.0  m }
+    Text",i," FontStyle { BOLD }
+    Text",i," Format { '",y[j],"' }zz  "))
+    j = j+1
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 1:67){
+  if (i != 34){
+        x <- (paste0(x,"{[Station_PassengerQueue",i,"].AverageQueueTime/1[min]}"))
+  }
+}
+print(x)
+```
+```{r echo=TRUE, results="hide"}
+x <- ""
+for (i in 2:33){
+  x <- (paste0(x,"PassengerArrival",i," NextComponent { Branch",i," }
+      PassengerArrival",i," FirstArrivalTime { 5  h }
+      PassengerArrival",i," InterArrivalTime { NonStatExponentialDistWeekend }
+      PassengerArrival",i," EntitiesPerArrival { 1 }
+      PassengerArrival",i," PrototypeEntity { Passenger }zz"))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+timings <- c(5.05,
+             5.06666666666667,
+             5.1,
+             5.15,
+             5.18333333333333,
+             5.23333333333333,
+             5.26666666666667,
+             5.3,
+             5.33333333333333,
+             5.36666666666667,
+             5.41666666666667,
+             5.43333333333333,
+             5.46666666666667,
+             5.5,
+             5.53333333333333,
+             5.56666666666666,
+             5.58333333333333,
+             5.61666666666666,
+             5.63333333333333,
+             5.66666666666666,
+             5.7,
+             5.73333333333333,
+             5.76666666666666,
+             5.8,
+             5.83333333333333,
+             5.86666666666666,
+             5.9,
+             5.93333333333333,
+             5.96666666666666,
+             6.01666666666666,
+             6.05,
+             6.08333333333333,
+             6.13333333333333)
+
+for (i in 1:33){
+  x <- (paste0(x,"Station_PassengerQueue",i," RenegeTime { 0  h }
+Station_PassengerQueue",i," RenegeCondition { 'this.SimTime < ",timings[i]," [h]' }
+Station_PassengerQueue",i," RenegeDestination { StationExit",i," }
+Station_PassengerQueue",i," MaxValidLength { 2147483647 }zz"))
+}
+print(x)
+```
+
+```{r echo=TRUE, results="hide"}
+x <- ""
+timings <- c(5.05,
+             5.06666666666667,
+             5.1,
+             5.15,
+             5.18333333333333,
+             5.23333333333333,
+             5.26666666666667,
+             5.3,
+             5.33333333333333,
+             5.36666666666667,
+             5.41666666666667,
+             5.43333333333333,
+             5.46666666666667,
+             5.5,
+             5.53333333333333,
+             5.56666666666666,
+             5.58333333333333,
+             5.61666666666666,
+             5.63333333333333,
+             5.66666666666666,
+             5.7,
+             5.73333333333333,
+             5.76666666666666,
+             5.8,
+             5.83333333333333,
+             5.86666666666666,
+             5.9,
+             5.93333333333333,
+             5.96666666666666,
+             6.01666666666666,
+             6.05,
+             6.08333333333333,
+             6.13333333333333)
+
+for (i in 35:67){
+  x <- (paste0(x,"Station_PassengerQueue",i," RenegeTime { 0  h }
+Station_PassengerQueue",i," RenegeCondition { 'this.SimTime < ",timings[i-34]," [h]' }
+Station_PassengerQueue",i," RenegeDestination { StationExit",i," }
+Station_PassengerQueue",i," MaxValidLength { 2147483647 }zz"))
+}
+print(x)
+```
+
+

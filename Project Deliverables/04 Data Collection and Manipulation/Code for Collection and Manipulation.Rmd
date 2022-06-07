@@ -1,0 +1,231 @@
+---
+title: "Data Collection and Manipulation"
+author: "Samuel Sim, Lee Min Shuen"
+date: "November 2021"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(knitr)
+opts_chunk$set(tidy.opts=list(width.cutoff=60),tidy=TRUE)
+```
+
+This is the python code for getting and collecting data from LTA API. The guide can be found in: `https://datamall.lta.gov.sg/content/dam/datamall/datasets/LTA_DataMall_API_User_Guide.pdf`.
+
+```{python eval = FALSE}
+# Getting Started
+import requests
+
+# Load unique access key
+Key = "insert api key"
+
+# Returns number of trips by weekdays and weekends for individual train stations
+# Update Freq By 15th of every month, only up to last three months
+data = requests.get(
+    "http://datamall2.mytransport.sg/ltaodataservice/PV/Train",
+    params = {"Date": 202109},
+    headers = {"AccountKey": Key}).json()
+
+data2 = requests.get(
+    "http://datamall2.mytransport.sg/ltaodataservice/PCDForecast",
+    params = {"TrainLine": "EWL"},
+    headers = {"AccountKey": Key}).json()
+
+print(data2)
+data2
+```
+
+R code for data wrangling in order to estimate certain input parameters for our model.
+
+```{r message=FALSE, warning=FALSE}
+library(tidyverse)
+library("ggpubr")
+
+peak <- c(5, 7, 8, 17, 18, 19)
+morningpeak <- c(5, 7, 8)
+eveningpeak <- c(17, 18, 19)
+
+nonpeak <- seq(5, 23)
+nonpeak <- subset(x = nonpeak, ! nonpeak %in% peak)
+nonpeak <- c(nonpeak, 0)
+
+data1 <- read.csv("transport_node_train_202107.csv")
+data2 <- read.csv("transport_node_train_202108.csv")
+data3 <- read.csv("transport_node_train_202109.csv")
+```
+
+Data preprocessing stage:
+
+```{r}
+combineddata <- rbind(data1, data2, data3)
+combineddata$YEAR_MONTH <- as.factor(combineddata$YEAR_MONTH)
+
+combineddata$PEAK <- 0
+combinedpeakid <- combineddata$TIME_PER_HOUR %in% peak
+combineddata$PEAK[combinedpeakid] <- ifelse(combineddata[combinedpeakid,]$TIME_PER_HOUR %in% morningpeak, 1, 2)
+combineddata$PEAK <- as.factor(combineddata$PEAK)
+
+combineddata$Connected <- str_count(combineddata$PT_CODE, "/") + 1
+combineddata$TOTAL_TAP_IN_VOLUME <- combineddata$TOTAL_TAP_IN_VOLUME/combineddata$Connected
+combineddata$IS_DT <- as.numeric(grepl("DT", combineddata$PT_CODE))
+```
+
+Visualization Plots of split datasets: 
+
+```{r}
+## Exploratory plots ##
+combineddata_set1 <- combineddata[combineddata$DAY_TYPE=="WEEKDAY" & (combineddata$PEAK==1 | combineddata$PEAK==2) & combineddata$IS_DT==1,]
+combineddata_set2 <- combineddata[combineddata$DAY_TYPE!="WEEKDAY" & (combineddata$PEAK==1 | combineddata$PEAK==2) & combineddata$IS_DT==1,]
+combineddata_set3 <- combineddata[combineddata$DAY_TYPE=="WEEKDAY" & combineddata$PEAK==0 & combineddata$IS_DT==1,]
+combineddata_set4 <- combineddata[combineddata$DAY_TYPE!="WEEKDAY" & combineddata$PEAK==0 & combineddata$IS_DT==1,]
+
+ggplot(combineddata_set1[combineddata_set1$PEAK==1,], aes(x=TOTAL_TAP_IN_VOLUME)) +
+  geom_histogram(aes(y=..density..), color="blue", fill = "gray") +
+  geom_density(color="red", lwd=1.2) +
+  theme_bw()
+
+ggplot(combineddata_set1[combineddata_set1$PEAK==2,], aes(x=TOTAL_TAP_IN_VOLUME)) +
+  geom_histogram(aes(y=..density..), color="blue", fill = "gray") +
+  geom_density(color="red", lwd=1.2) +
+  theme_bw()
+
+ggplot(combineddata_set2[combineddata_set2$PEAK==1,], aes(x=TOTAL_TAP_IN_VOLUME)) +
+  geom_histogram(aes(y=..density..), color="blue", fill = "gray") +
+  geom_density(color="red", lwd=1.2) +
+  theme_bw()
+
+ggplot(combineddata_set2[combineddata_set2$PEAK==2,], aes(x=TOTAL_TAP_IN_VOLUME)) +
+  geom_histogram(aes(y=..density..), color="blue", fill = "gray") +
+  geom_density(color="red", lwd=1.2) +
+  theme_bw()
+
+ggplot(combineddata_set3, aes(x=TOTAL_TAP_IN_VOLUME)) +
+  geom_histogram(aes(y=..density..), color="blue", fill = "gray") +
+  geom_density(color="red", lwd=1.2) +
+  theme_bw()
+
+ggplot(combineddata_set4, aes(x=TOTAL_TAP_IN_VOLUME)) +
+  geom_histogram(aes(y=..density..), color="blue", fill = "gray") +
+  geom_density(color="red", lwd=1.2) +
+  theme_bw()
+```
+
+Statistical Tests:
+
+```{r}
+# Check if amount of passenger arrivals are different between morning peak, evening peak, and non-peak
+
+# Weekday
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ PEAK, data = combineddata[combineddata$DAY_TYPE=="WEEKDAY" & combineddata$YEAR_MONTH=="2021-07",])
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ PEAK, data = combineddata[combineddata$DAY_TYPE=="WEEKDAY" & combineddata$YEAR_MONTH=="2021-08",])
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ PEAK, data = combineddata[combineddata$DAY_TYPE=="WEEKDAY" & combineddata$YEAR_MONTH=="2021-09",])
+
+
+# Weekend
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ PEAK, data = combineddata[combineddata$DAY_TYPE!="WEEKDAY" & combineddata$YEAR_MONTH=="2021-07",])
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ PEAK, data = combineddata[combineddata$DAY_TYPE!="WEEKDAY" & combineddata$YEAR_MONTH=="2021-08",])
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ PEAK, data = combineddata[combineddata$DAY_TYPE!="WEEKDAY" & combineddata$YEAR_MONTH=="2021-09",])
+
+ggboxplot(combineddata[combineddata$DAY_TYPE=="WEEKDAY" & combineddata$YEAR_MONTH=="2021-07",],
+          x = "PEAK",
+          y = "TOTAL_TAP_IN_VOLUME", 
+          color = "PEAK", 
+          palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          ylim=c(0,30000),
+          ylab = "TOTAL_TAP_IN_VOLUME", xlab = "PEAK") +
+  scale_color_hue(labels = c("Non-Peak", "Morning Peak", "Evening Peak"))
+ggsave("myplot.png")
+# Check if amount of passenger arrivals are different between months for morning/evening peak, non-peak ##
+
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ YEAR_MONTH, data = combineddata_set1[combineddata_set1$PEAK==1,])
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ YEAR_MONTH, data = combineddata_set1[combineddata_set1$PEAK==2,])
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ YEAR_MONTH, data = combineddata_set2[combineddata_set2$PEAK==1,])
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ YEAR_MONTH, data = combineddata_set2[combineddata_set2$PEAK==2,])
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ YEAR_MONTH, data = combineddata_set3)
+kruskal.test(TOTAL_TAP_IN_VOLUME ~ YEAR_MONTH, data = combineddata_set4)
+```
+
+Visualization using boxplots: 
+
+```{r}
+ggboxplot(combineddata_set1[combineddata_set1$PEAK==1,], x = "YEAR_MONTH", y = "TOTAL_TAP_IN_VOLUME", 
+          color = "YEAR_MONTH", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          ylab = "TOTAL_TAP_IN_VOLUME", xlab = "YEAR_MONTH")
+
+ggboxplot(combineddata_set1[combineddata_set1$PEAK==2,], x = "YEAR_MONTH", y = "TOTAL_TAP_IN_VOLUME", 
+          color = "YEAR_MONTH", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          ylab = "TOTAL_TAP_IN_VOLUME", xlab = "YEAR_MONTH")
+
+ggboxplot(combineddata_set2[combineddata_set2$PEAK==1,], x = "YEAR_MONTH", y = "TOTAL_TAP_IN_VOLUME", 
+          color = "YEAR_MONTH", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          ylab = "TOTAL_TAP_IN_VOLUME", xlab = "YEAR_MONTH")
+
+ggboxplot(combineddata_set2[combineddata_set2$PEAK==2,], x = "YEAR_MONTH", y = "TOTAL_TAP_IN_VOLUME", 
+          color = "YEAR_MONTH", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          ylab = "TOTAL_TAP_IN_VOLUME", xlab = "YEAR_MONTH")
+
+ggboxplot(combineddata_set3, x = "YEAR_MONTH", y = "TOTAL_TAP_IN_VOLUME", 
+          color = "YEAR_MONTH", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("2021-07", "2021-08", "2021-09"),
+          ylab = "TOTAL_TAP_IN_VOLUME", xlab = "YEAR_MONTH")
+
+ggboxplot(combineddata_set3, x = "YEAR_MONTH", y = "TOTAL_TAP_IN_VOLUME", 
+          color = "YEAR_MONTH", palette = c("#00AFBB", "#E7B800", "#FC4E07"),
+          order = c("2021-07", "2021-08", "2021-09"),
+          ylab = "TOTAL_TAP_IN_VOLUME", xlab = "YEAR_MONTH")
+
+# summary(aov(TOTAL_TAP_IN_VOLUME ~ YEAR_MONTH, data = combineddata_set1))
+# summary(aov(TOTAL_TAP_IN_VOLUME ~ YEAR_MONTH, data = combineddata_set2))
+# summary(aov(TOTAL_TAP_IN_VOLUME ~ YEAR_MONTH, data = combineddata_set3))
+# summary(aov(TOTAL_TAP_IN_VOLUME ~ YEAR_MONTH, data = combineddata_set4))
+```
+
+Creating parameters values:
+
+```{r}
+create_table <- function(data){
+  data$PEAK <- 0
+  datapeakid <- data$TIME_PER_HOUR %in% peak
+  data$PEAK[datapeakid] <- ifelse(data[datapeakid,]$TIME_PER_HOUR %in% morningpeak, 1, 2)
+  data$PEAK <- as.factor(data$PEAK)
+  data$Connected <- str_count(data$PT_CODE, "/") + 1
+  data$TOTAL_TAP_IN_VOLUME <- data$TOTAL_TAP_IN_VOLUME/data$Connected
+  data$IS_DT <- as.numeric(grepl("DT", data$PT_CODE))
+  
+  weekday_morningpeak_arrival_frequency <- data$TOTAL_TAP_IN_VOLUME[data$DAY_TYPE=="WEEKDAY" & data$PEAK==1 & data$IS_DT==1]
+  weekday_eveningpeak_arrival_frequency <- data$TOTAL_TAP_IN_VOLUME[data$DAY_TYPE=="WEEKDAY" & data$PEAK==2 & data$IS_DT==1]
+  weekday_nonpeak_arrival_frequency <- data$TOTAL_TAP_IN_VOLUME[data$DAY_TYPE=="WEEKDAY" & data$PEAK==0 & data$IS_DT==1]
+  
+  mean_weekday_morningpeak_arrival_frequency <- mean(weekday_morningpeak_arrival_frequency)
+  mean_weekday_eveningpeak_arrival_frequency <- mean(weekday_eveningpeak_arrival_frequency)
+  mean_weekday_nonpeak_arrival_frequency <- mean(weekday_nonpeak_arrival_frequency)
+  
+  
+  weekend_morningpeak_arrival_frequency <- data$TOTAL_TAP_IN_VOLUME[data$DAY_TYPE!="WEEKDAY" & data$PEAK==1 & data$IS_DT==1]
+  weekend_eveningpeak_arrival_frequency <- data$TOTAL_TAP_IN_VOLUME[data$DAY_TYPE!="WEEKDAY" & data$PEAK==2 & data$IS_DT==1]
+  weekend_nonpeak_arrival_frequency <- data$TOTAL_TAP_IN_VOLUME[data$DAY_TYPE!="WEEKDAY" & data$PEAK==0 & data$IS_DT==1]
+  
+  mean_weekend_morningpeak_arrival_frequency <- mean(weekend_morningpeak_arrival_frequency)
+  mean_weekend_eveningpeak_arrival_frequency <- mean(weekend_eveningpeak_arrival_frequency)
+  mean_weekend_nonpeak_arrival_frequency <- mean(weekend_nonpeak_arrival_frequency)
+  
+  frequencytable <- matrix(c(mean_weekday_morningpeak_arrival_frequency,
+                             mean_weekday_eveningpeak_arrival_frequency,
+                             mean_weekday_nonpeak_arrival_frequency,
+                             mean_weekend_morningpeak_arrival_frequency,
+                             mean_weekend_eveningpeak_arrival_frequency,
+                             mean_weekend_nonpeak_arrival_frequency), 2, 3, byrow = T)
+  
+  rownames(frequencytable) <- c("Weekday", "Weekend")
+  colnames(frequencytable) <- c("MorningPeak", "EveningPeak", "NonPeak")
+  
+  return(frequencytable/60)
+}
+
+floor(create_table(combineddata))
+round(1/floor(create_table(combineddata)), 4)
+```
+
