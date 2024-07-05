@@ -2,7 +2,7 @@
 40.015 Simulation Modelling and Analysis
 
 ## Details
-**Project Title:** Who might be the actual author of “A Visit of St. Nicholas”?
+**Project Title:** Simulation Modeling of a MRT System using Jaasim
 
 **Description:** Our project is to simulate a Mass Rapid Transit (MRT) System Line of Singapore. In our simulation model we used the example of the Downtown (Blue) Line which is connected to our Singapore University of Technology and Design. 
 
